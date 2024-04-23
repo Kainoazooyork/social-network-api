@@ -2,28 +2,7 @@
 const { ObjectId } = require('mongoose').Types;
 const { User, Thought } = require('../models');
 
-// TODO: Create an aggregate function to get the number of users overall
-const headCount = async () => {
-  // Your code here
-  const numberOfUsers = await User.aggregate();
-  return numberOfUsers;
-}
 
-// Execute the aggregate method on the User model and calculate the overall grade by using the $avg operator
-const grade = async (userId) =>
-  User.aggregate([
-    // TODO: Ensure we include only the user who can match the given ObjectId using the $match operator
-    {
-      // Your code here
-    },
-    {
-      $unwind: '$reactions',
-    },
-    // TODO: Group information for the user with the given ObjectId alongside an overall grade calculated using the $avg operator
-    {
-      // Your code here
-    },
-  ]);
 
 module.exports = {
   // Get all users
@@ -32,7 +11,6 @@ module.exports = {
       const users = await User.find();
       const userObj = {
         users,
-        headCount: await headCount(),
       };
       return res.json(userObj);
     } catch (err) {
@@ -53,7 +31,6 @@ module.exports = {
 
       res.json({
         user,
-        grade: await grade(req.params.userId),
       });
     } catch (err) {
       console.log(err);
@@ -78,17 +55,7 @@ module.exports = {
         return res.status(404).json({ message: 'No such user exists' })
       }
 
-      const thought = await Thought.findOneAndUpdate(
-        { users: req.params.userId },
-        { $pull: { users: req.params.userId } },
-        { new: true }
-      );
-
-      if (!thought) {
-        return res.status(404).json({
-          message: 'User deleted, but no thoughts found',
-        });
-      }
+      
 
       res.json({ message: 'User successfully deleted' });
     } catch (err) {
@@ -96,15 +63,32 @@ module.exports = {
       res.status(500).json(err);
     }
   },
+// Update a user
+async updateUser(req, res) {
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $set: req.body },
+      { runValidators: true, new: true }
+    );
 
-  // Add an reaction to a user
-  async addReaction(req, res) {
+    if (!user) {
+      return res.status(404).json({ message: 'No user with this id!' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+},
+  // Add an friend to a user
+  async addFriend(req, res) {
     try {
-      console.log('You are adding an reaction');
+      console.log('You are adding an friend');
       console.log(req.body);
       const user = await User.findOneAndUpdate(
         { _id: req.params.userId },
-        { $addToSet: { reactions: req.body } },
+        { $addToSet: { friends: req.params.friendId} },
         { runValidators: true, new: true }
       );
 
@@ -119,12 +103,12 @@ module.exports = {
       res.status(500).json(err);
     }
   },
-  // Remove reaction from a user
-  async removeReaction(req, res) {
+  // Remove friend from a user
+  async removeFriend(req, res) {
     try {
       const user = await User.findOneAndUpdate(
         { _id: req.params.userId },
-        { $pull: { reaction: { reactionId: req.params.reactionId } } },
+        { $pull: { friends:  req.params.friendId } },
         { runValidators: true, new: true }
       );
 
