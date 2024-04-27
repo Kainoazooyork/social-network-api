@@ -20,7 +20,7 @@ NPM install
 
 ## Usage
     
-Used to create logo
+Use insomnia for routes testing
     
 ## Credits
     
